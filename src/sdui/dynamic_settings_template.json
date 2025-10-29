@@ -1,0 +1,9 @@
+{
+  "preferred_partners_sdui": {
+    "endpoint": "https://www.abhibus.com/app/v92/getAllOffers/ANDR",
+    "httpMethod": "GET",
+    "requestJson": {
+      "key": "value"
+    }
+  }
+}
