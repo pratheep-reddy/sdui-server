@@ -40,6 +40,5 @@ services:
 databases:
   - name: sdui-db
     databaseName: sdui_db
-    user: postgres
     plan: free
 
