@@ -1,0 +1,45 @@
+services:
+  # NestJS API Server
+  - type: web
+    name: sdui-server
+    runtime: node
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: DB_TYPE
+        value: postgres
+      - key: DB_HOST
+        fromDatabase:
+          name: sdui-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: sdui-db
+          property: port
+      - key: DB_USERNAME
+        fromDatabase:
+          name: sdui-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: sdui-db
+          property: password
+      - key: DB_DATABASE
+        fromDatabase:
+          name: sdui-db
+          property: database
+
+databases:
+  - name: sdui-db
+    databaseName: sdui_db
+    user: postgres
+    plan: free
+

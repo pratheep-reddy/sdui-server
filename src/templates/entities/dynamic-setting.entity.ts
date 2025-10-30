@@ -21,6 +21,7 @@ export class DynamicSetting {
 
   @Column('jsonb', { nullable: true })
   requestJson: any;
+  
 
   @CreateDateColumn()
   createdAt: Date;
