@@ -112,6 +112,7 @@ export class TemplatesController {
       endpoint: string;
       httpMethod: string;
       requestJson: any;
+      headerJson: any;
     },
   ) {
     const setting = await this.templatesService.saveDynamicSetting({
@@ -125,6 +126,7 @@ export class TemplatesController {
         endpoint: setting.endpoint,
         httpMethod: setting.httpMethod,
         requestJson: setting.requestJson,
+        headerJson: setting.headerJson,
       },
     };
   }

@@ -52,7 +52,7 @@ export class SduiService {
     }
 
     try {
-      const { endpoint, httpMethod, requestJson } = dynamicSetting;
+      const { endpoint, httpMethod, requestJson, headerJson } = dynamicSetting;
       
       console.log('=== Making API Call ===');
       console.log('Endpoint:', endpoint);
@@ -68,6 +68,7 @@ export class SduiService {
           method: httpMethod,
           headers: {
             'Content-Type': 'application/json',
+            ...headerJson,
           },
           body: JSON.stringify(requestJson || {}),
         });

@@ -92,8 +92,9 @@ export class TemplatesService {
     endpoint: string;
     httpMethod: string;
     requestJson: any;
+    headerJson?: any;
   }): Promise<DynamicSetting> {
-    const { templateId, endpoint, httpMethod, requestJson } = params;
+    const { templateId, endpoint, httpMethod, requestJson, headerJson } = params;
     const template = await this.getTemplateById(templateId);
 
     // Check if dynamic setting already exists
@@ -106,6 +107,7 @@ export class TemplatesService {
       setting.endpoint = endpoint;
       setting.httpMethod = httpMethod;
       setting.requestJson = requestJson;
+      setting.headerJson = headerJson;
     } else {
       // Create new setting
       setting = this.dynamicSettingRepository.create({
@@ -113,6 +115,7 @@ export class TemplatesService {
         endpoint,
         httpMethod,
         requestJson,
+        headerJson,
       });
     }
 
