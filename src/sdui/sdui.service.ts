@@ -201,26 +201,33 @@ export class SduiService {
    */
   private mergeArrayVariable(variable: any, apiData: any): any {
     console.log(`  [mergeArrayVariable] Processing array variable: "${variable.name}"`);
+    if (variable.arrayKeyName) {
+      console.log(`  [mergeArrayVariable] Has arrayKeyName: "${variable.arrayKeyName}"`);
+    }
     
     if (!Array.isArray(variable.value) || variable.value.length === 0) {
       console.log(`  [mergeArrayVariable] ❌ Variable value is not an array or is empty`);
       return variable;
     }
 
-    // First: Check if variable.name exists directly in apiData
-    let arrayData = apiData[variable.name];
-    console.log(`  [mergeArrayVariable] Direct key check (${variable.name}):`, arrayData ? 'Found' : 'Not found');
+    // Use arrayKeyName if available, otherwise use variable.name
+    const lookupKey = variable.arrayKeyName || variable.name;
+    console.log(`  [mergeArrayVariable] Looking up data using key: "${lookupKey}"`);
+
+    // First: Check if lookupKey exists directly in apiData
+    let arrayData = apiData[lookupKey];
+    console.log(`  [mergeArrayVariable] Direct key check (${lookupKey}):`, arrayData ? 'Found' : 'Not found');
 
     // Second: Try nested path if not found directly
     if (!arrayData) {
-      arrayData = this.resolveNestedPath(apiData, variable.name);
+      arrayData = this.resolveNestedPath(apiData, lookupKey);
       console.log(`  [mergeArrayVariable] Nested path check:`, arrayData ? 'Found' : 'Not found');
     }
 
     // Third: Try common patterns as fallback
     if (!arrayData || !Array.isArray(arrayData)) {
       console.log(`  [mergeArrayVariable] Trying fallback patterns...`);
-      arrayData = this.findArrayInResponse(apiData, variable.name);
+      arrayData = this.findArrayInResponse(apiData, lookupKey);
     }
 
     if (!arrayData || !Array.isArray(arrayData)) {
@@ -236,12 +243,12 @@ export class SduiService {
 
     // Map each item in the API array using the template
     // Each apiItem is merged with the template independently
-    // Pass the variable name so we can strip it from placeholder paths
+    // Pass the lookupKey (arrayKeyName or variable.name) so we can strip it from placeholder paths
     const mappedArray = arrayData.map((apiItem, index) => {
       if (index === 0) {
         console.log(`  [mergeArrayVariable] Processing first API item:`, JSON.stringify(apiItem).substring(0, 150));
       }
-      const mapped = this.mapTemplateRecursively(itemTemplate, apiItem, 0, variable.name);
+      const mapped = this.mapTemplateRecursively(itemTemplate, apiItem, 0, lookupKey);
       
       // Post-process: convert descriptions string to array if needed
       if (mapped.descriptions && typeof mapped.descriptions === 'string') {
