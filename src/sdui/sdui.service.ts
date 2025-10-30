@@ -148,32 +148,8 @@ export class SduiService {
       console.log('=== Merge Complete ===');
       console.log('Variables merged:', variablesMerged);
 
-      // Apply arrayKeyName to variable names if specified
-      if (mergedData.card?.variables) {
-        mergedData.card.variables = mergedData.card.variables.map((variable: any) => {
-          if (variable.arrayKeyName) {
-            console.log(`  [Post-process] Using arrayKeyName: "${variable.arrayKeyName}" for variable originally named "${variable.name}"`);
-            return { ...variable, name: variable.arrayKeyName };
-          }
-          return variable;
-        });
-      } else if (mergedData.variables) {
-        mergedData.variables = mergedData.variables.map((variable: any) => {
-          if (variable.arrayKeyName) {
-            console.log(`  [Post-process] Using arrayKeyName: "${variable.arrayKeyName}" for variable originally named "${variable.name}"`);
-            return { ...variable, name: variable.arrayKeyName };
-          }
-          return variable;
-        });
-      } else if (mergedData.template?.variables) {
-        mergedData.template.variables = mergedData.template.variables.map((variable: any) => {
-          if (variable.arrayKeyName) {
-            console.log(`  [Post-process] Using arrayKeyName: "${variable.arrayKeyName}" for variable originally named "${variable.name}"`);
-            return { ...variable, name: variable.arrayKeyName };
-          }
-          return variable;
-        });
-      }
+      // Note: We keep variable.name unchanged and preserve arrayKeyName as metadata
+      // The template structure references the original variable.name, so we must not change it
 
       // Save the merged data as dynamicTemplateJson
       template.dynamicTemplateJson = mergedData;
