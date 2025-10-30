@@ -245,9 +245,7 @@ export class SduiService {
     // Each apiItem is merged with the template independently
     // Pass the lookupKey (arrayKeyName or variable.name) so we can strip it from placeholder paths
     const mappedArray = arrayData.map((apiItem, index) => {
-      if (index === 0) {
-        console.log(`  [mergeArrayVariable] Processing first API item:`, JSON.stringify(apiItem).substring(0, 150));
-      }
+      console.log(`  [mergeArrayVariable] Processing API item #${index}:`, JSON.stringify(apiItem).substring(0, 150));
       const mapped = this.mapTemplateRecursively(itemTemplate, apiItem, 0, lookupKey);
       
       // Post-process: convert descriptions string to array if needed
@@ -257,9 +255,7 @@ export class SduiService {
         mapped.descriptions = lines.map(line => ({ text: line.trim() }));
       }
       
-      if (index === 0) {
-        console.log(`  [mergeArrayVariable] First mapped result:`, JSON.stringify(mapped).substring(0, 300));
-      }
+      console.log(`  [mergeArrayVariable] Mapped result #${index}:`, JSON.stringify(mapped).substring(0, 300));
       return mapped;
     });
 
@@ -293,20 +289,20 @@ export class SduiService {
     if (typeof template === 'string') {
       // Check if it's a placeholder like {{response.data.field}} or {{field}}
       if (template.includes('{{') && template.includes('}}')) {
-        let path = this.extractPathFromMapping(template);
+        const originalPath = this.extractPathFromMapping(template);
+        let path = originalPath;
         
         // If we're inside an array item mapping and the path starts with the array variable name,
         // remove it to get the relative path within the item
         if (arrayVarName && path.startsWith(arrayVarName + '.')) {
-          path = path.substring(arrayVarName.length + 1);
+          const strippedPath = path.substring(arrayVarName.length + 1);
+          console.log(`    [mapTemplate] Stripping arrayVarName "${arrayVarName}" from path "${path}" → "${strippedPath}"`);
+          path = strippedPath;
         }
         
         const value = this.resolveNestedPath(dataItem, path);
         
-        if (depth === 0) {
-          // Log only at top level to avoid too much noise
-          console.log(`    [mapTemplate] "${template}" → path: "${path}" → value:`, value !== undefined ? JSON.stringify(value).substring(0, 100) : 'NOT FOUND');
-        }
+        console.log(`    [mapTemplate] Template: "${template}" | Original path: "${originalPath}" | Final path: "${path}" | Value:`, value !== undefined ? JSON.stringify(value).substring(0, 100) : 'NOT FOUND');
         
         return value !== undefined ? value : template;
       }
