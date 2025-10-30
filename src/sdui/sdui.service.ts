@@ -94,8 +94,12 @@ export class SduiService {
       console.log('=== API Response Data ===');
       console.log(JSON.stringify(apiData, null, 2));
 
+      // Use dynamicTemplateJson if it exists (contains mappings), otherwise fall back to staticTemplateJson
+      const sourceTemplate = template.dynamicTemplateJson || template.staticTemplateJson;
+      console.log('Using template source:', template.dynamicTemplateJson ? 'dynamicTemplateJson' : 'staticTemplateJson');
+      
       // Deep clone template data
-      const mergedData = JSON.parse(JSON.stringify(template.staticTemplateJson));
+      const mergedData = JSON.parse(JSON.stringify(sourceTemplate));
 
       console.log('=== Merging Variables ===');
       console.log('Template structure check:');
@@ -144,29 +148,28 @@ export class SduiService {
       console.log('=== Merge Complete ===');
       console.log('Variables merged:', variablesMerged);
 
-      // Post-process: Rename array variables to match DivKit expectations
-      // DivKit gallery expects variable name "item_data", so rename any array variable to it
+      // Apply arrayKeyName to variable names if specified
       if (mergedData.card?.variables) {
         mergedData.card.variables = mergedData.card.variables.map((variable: any) => {
-          if (variable.type === 'array') {
-            console.log(`  [Post-process] Renaming array variable "${variable.name}" to "item_data"`);
-            return { ...variable, name: 'item_data' };
+          if (variable.arrayKeyName) {
+            console.log(`  [Post-process] Using arrayKeyName: "${variable.arrayKeyName}" for variable originally named "${variable.name}"`);
+            return { ...variable, name: variable.arrayKeyName };
           }
           return variable;
         });
       } else if (mergedData.variables) {
         mergedData.variables = mergedData.variables.map((variable: any) => {
-          if (variable.type === 'array') {
-            console.log(`  [Post-process] Renaming array variable "${variable.name}" to "item_data"`);
-            return { ...variable, name: 'item_data' };
+          if (variable.arrayKeyName) {
+            console.log(`  [Post-process] Using arrayKeyName: "${variable.arrayKeyName}" for variable originally named "${variable.name}"`);
+            return { ...variable, name: variable.arrayKeyName };
           }
           return variable;
         });
       } else if (mergedData.template?.variables) {
         mergedData.template.variables = mergedData.template.variables.map((variable: any) => {
-          if (variable.type === 'array') {
-            console.log(`  [Post-process] Renaming array variable "${variable.name}" to "item_data"`);
-            return { ...variable, name: 'item_data' };
+          if (variable.arrayKeyName) {
+            console.log(`  [Post-process] Using arrayKeyName: "${variable.arrayKeyName}" for variable originally named "${variable.name}"`);
+            return { ...variable, name: variable.arrayKeyName };
           }
           return variable;
         });
