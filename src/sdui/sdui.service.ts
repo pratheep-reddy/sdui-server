@@ -62,7 +62,12 @@ export class SduiService {
       let apiResponse: Response;
 
       if (httpMethod === 'GET') {
-        apiResponse = await fetch(endpoint);
+        apiResponse = await fetch(endpoint, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...headerJson,
+          },
+        });
       } else {
         apiResponse = await fetch(endpoint, {
           method: httpMethod,
