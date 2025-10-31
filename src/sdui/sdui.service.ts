@@ -94,12 +94,12 @@ export class SduiService {
       console.log('=== API Response Data ===');
       console.log(JSON.stringify(apiData, null, 2));
 
-      // Use dynamicTemplateJson if it exists (contains mappings), otherwise fall back to staticTemplateJson
-      const sourceTemplate = template.dynamicTemplateJson || template.staticTemplateJson;
-      console.log('Using template source:', template.dynamicTemplateJson ? 'dynamicTemplateJson' : 'staticTemplateJson');
-      
-      // Deep clone template data
-      const mergedData = JSON.parse(JSON.stringify(sourceTemplate));
+    // Use dynamicTemplateJson if it exists (has field mappings), otherwise use staticTemplateJson
+    const sourceTemplate = template.dynamicTemplateJson || template.staticTemplateJson;
+    console.log(`Using ${template.dynamicTemplateJson ? 'dynamicTemplateJson' : 'staticTemplateJson'} as template source`);
+    
+    // Deep clone template data
+    const mergedData = JSON.parse(JSON.stringify(sourceTemplate));
 
       console.log('=== Merging Variables ===');
       console.log('Template structure check:');
@@ -114,10 +114,17 @@ export class SduiService {
       if (mergedData.card?.variables) {
         // Variables under card (most common)
         console.log('✓ Merging card.variables (count:', mergedData.card.variables.length, ')');
+        console.log('Full variables array:', JSON.stringify(mergedData.card.variables, null, 2));
         mergedData.card.variables = mergedData.card.variables.map((variable: any, index: number) => {
-          console.log(`  - Variable [${index}]:`, variable.name, '(type:', variable.type, ')');
+          console.log(`\n  ====== Variable [${index}] ======`);
+          console.log(`  Name: ${variable.name}`);
+          console.log(`  Type: ${variable.type}`);
+          console.log(`  arrayKeyName: ${variable.arrayKeyName || 'none'}`);
+          console.log(`  Value preview:`, JSON.stringify(variable.value).substring(0, 100));
+          
           const merged = this.mergeVariable(variable, apiData);
-          console.log(`    Merged value:`, JSON.stringify(merged.value).substring(0, 200));
+          
+          console.log(`  Merged value preview:`, JSON.stringify(merged.value).substring(0, 200));
           return merged;
         });
         variablesMerged = true;
@@ -151,10 +158,9 @@ export class SduiService {
       // Note: We keep variable.name unchanged and preserve arrayKeyName as metadata
       // The template structure references the original variable.name, so we must not change it
 
-      // Save the merged data as dynamicTemplateJson
-      template.dynamicTemplateJson = mergedData;
-      await this.templateRepository.save(template);
-      console.log('✓ Saved merged data to database');
+      // DO NOT save mergedData back to database - it contains actual values, not placeholders!
+      // dynamicTemplateJson should only be updated via the UI with placeholders and metadata
+      console.log('✓ Merge complete (not saving to database - keeping original template structure)');
 
       return {
         success: true,
@@ -244,9 +250,15 @@ export class SduiService {
     // Map each item in the API array using the template
     // Each apiItem is merged with the template independently
     // Pass the lookupKey (arrayKeyName or variable.name) so we can strip it from placeholder paths
+    console.log(`  [mergeArrayVariable] 🔄 Starting to map ${arrayData.length} items...`);
     const mappedArray = arrayData.map((apiItem, index) => {
-      console.log(`  [mergeArrayVariable] Processing API item #${index}:`, JSON.stringify(apiItem).substring(0, 150));
-      const mapped = this.mapTemplateRecursively(itemTemplate, apiItem, 0, lookupKey);
+      console.log(`\n  [mergeArrayVariable] 📦 Processing API item #${index}:`);
+      console.log(`    Item data:`, JSON.stringify(apiItem).substring(0, 200));
+      console.log(`    lookupKey: "${lookupKey}"`);
+      
+      // IMPORTANT: Deep clone the template for each item to avoid mutation!
+      const freshTemplate = JSON.parse(JSON.stringify(itemTemplate));
+      const mapped = this.mapTemplateRecursively(freshTemplate, apiItem, 0, lookupKey);
       
       // Post-process: convert descriptions string to array if needed
       if (mapped.descriptions && typeof mapped.descriptions === 'string') {
@@ -255,7 +267,7 @@ export class SduiService {
         mapped.descriptions = lines.map(line => ({ text: line.trim() }));
       }
       
-      console.log(`  [mergeArrayVariable] Mapped result #${index}:`, JSON.stringify(mapped).substring(0, 300));
+      console.log(`    ✅ Mapped result:`, JSON.stringify(mapped).substring(0, 300));
       return mapped;
     });
 
@@ -296,13 +308,19 @@ export class SduiService {
         // remove it to get the relative path within the item
         if (arrayVarName && path.startsWith(arrayVarName + '.')) {
           const strippedPath = path.substring(arrayVarName.length + 1);
-          console.log(`    [mapTemplate] Stripping arrayVarName "${arrayVarName}" from path "${path}" → "${strippedPath}"`);
+          console.log(`    [mapTemplate] ✂️ Stripping "${arrayVarName}." from "${path}" → "${strippedPath}"`);
           path = strippedPath;
+        } else if (arrayVarName) {
+          console.log(`    [mapTemplate] ⚠️ Path "${path}" does NOT start with "${arrayVarName}." - not stripping`);
         }
         
         const value = this.resolveNestedPath(dataItem, path);
         
-        console.log(`    [mapTemplate] Template: "${template}" | Original path: "${originalPath}" | Final path: "${path}" | Value:`, value !== undefined ? JSON.stringify(value).substring(0, 100) : 'NOT FOUND');
+        const dataItemPreview = JSON.stringify(dataItem).substring(0, 200);
+        console.log(`    [mapTemplate] "${template}"`);
+        console.log(`      → Path: "${originalPath}" → "${path}"`);
+        console.log(`      → DataItem: ${dataItemPreview}`);
+        console.log(`      → Resolved Value:`, value !== undefined ? JSON.stringify(value).substring(0, 100) : '❌ NOT FOUND');
         
         return value !== undefined ? value : template;
       }
